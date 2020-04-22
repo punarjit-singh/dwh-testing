@@ -138,8 +138,7 @@ One solution to this is check to see if we have we made date checks in the code 
  Sudo Query:
 ```
  select count(1) cnt from T1 where recordId = {recordId} 
-  and CreatedDate > dateadd(d, -1, GETDATE()) and CreatedDate
-  < GETDATE() 
+  and CreatedDate > dateadd(d, -1, GETDATE()) and CreatedDate < GETDATE() 
 ```
 
 #### SITUATION 2: One of our end users didn’t receive the file. 
