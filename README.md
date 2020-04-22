@@ -6,6 +6,18 @@ For the given scenario, assuming that following are the main business goals for 
 * Converting the strings into their native types
 * Removing redundant and bad data 
 
+Data transfer speed and accuracy is vital, 
+hence we can assume that following are the main business goals from accuracy and speed perspective
+to ensure optimal, consistent runtimes for REA's ETL processes:
+
+* COPY data from multiple, evenly sized files or different file sizes.
+* Use workload management to improve ETL runtime
+* Perform table maintenance regularly
+* Perform multiple steps in a single transaction.
+* Loading data in bulk.
+* Extract large result sets.
+* Monitor daily ETL health using diagnostic queries.
+
 On a high level, the following testing strategy can be followed:
 
 In any data pipeline, logs play a vital role in debugging and data analysis.
@@ -18,8 +30,9 @@ stage verbose logs and output template types for final transfer stage etc.
 
 ### Phase 1 ETL:
 
-* Extract  - Access to all data sources is sorted and we're able to get chunks of data from the primary source:
-    * e.g. using curl -O 'https://data.rea.org/resource/gh4g-9sfh.json?$limit=50000'
+* Extract  - Make sure access to all data sources is sorted and we're able 
+to get chunks of data from the primary source:
+    * e.g. using curl -O 'https://data.rea.org/resource/gh4g-9sfh.json?$limit=50000' or some DB queries.
     * Here we need to ensure that extract stage works exactly as required.
     * Gauge the latency and see if that meets business standards, if not then discuss 
     to add more resources to reduce the latency.
@@ -29,11 +42,14 @@ stage verbose logs and output template types for final transfer stage etc.
 can be used to test the Clean functions. For example: 
     * The raw data for listings will contain records that don't include certain attributes 
 e.g. postcode or lets say address. 
-These records are less useful because they fail to solve user's purpose, 
+    * These records are less useful because they fail to solve user's purpose, 
 so it might make sense to remove them. 
-Define a function that takes in the record, and yields it only if it has both 
+    * Assuming we will have a set functions defined that takes in the record, 
+and yields it only if it has certain attributes example in this case 
+it should yield only if a record has both 
 a postcode and a address defined:
-```def discard_incomplete(record):
+```
+def discard_incomplete(record):
     if 'postcode' in record and 'address' in record:
         yield record
 ```
@@ -49,7 +65,7 @@ Each stage can have its own isolated automated tests that validates only and onl
 Along with that some really important integration tests are required to 
 validate that data flows correctly from one stage to another.
 
-* Transform - This is the stage where we need check that data type casting.
+* Transform - This is the stage where we need check the data type casting.
 
 Assuming that we will have some functions defined that casts the relevant fields to the appropriate types:
 
@@ -59,11 +75,17 @@ Example:
     # Only the year part of the datetime string is significant
     record['postcode'] = int(record['postcode'][:4])
 
-    record['anotherattribute'] = float(record['anotherattribute']) if 'anotherattribute' in record else None
+    record['anotherattribute'] = int(record['anotherattribute']) if 'anotherattribute' in record else None
 
     address = record['address']
-    address['streetname'] = float(address['streetname'])
-    address['housenumber'] = float(address['housenumber'])
+    address['streetname'] = string(address['streetname'])
+    address['housenumber'] = int(address['housenumber'])
+    address['housenumber'] = int(address['housenumber'])
+
+    mapGeolocation = record['mapGeolocation']
+    mapGeolocation['latitude'] = float(mapGeolocation['latitude'])
+    mapGeolocation['longitude'] = float(mapGeolocation['longitude'])
+
     return record
 ```
 
@@ -78,15 +100,14 @@ to intermediate database data testing
      * NOT NULL
      * UNIQUE
      * Primary Key
-     * Foreign Key
-     * Check
+     * Foreign Key Check
      * NULL
      * Default 
-  * Duplicate Check Testing
+   * duplicate Check Testing
 
 ### Phase 2 ETL:
 
-* In phase 2 first we need to ensure that we're following presentation best practices 
+* In phase 2 first we need to ensure that we're following presentation level best practices 
 wherein we can use techniques such as templates to transform the data in required format.
 * Hence template testing and schema validation is the key to make sure all users receive consistent data.
 * Tests should be written for extract and transform stage similar to as mentioned in Phase 1 ETL.
@@ -101,7 +122,7 @@ that can enable some sort of network throttling and induce network failures.
  
  #### SITUATION 1: Our users have received the files for today but it only had data from 2 days ago. 
 Steps to perform to reach the root cause:
-* Thereafter, first check that recent data is available in the intermediate database.
+* First check that recent data is available in the intermediate database.
 * For each data set sent to the user each day, a record should be maintained as 
 metadata with timestamps and other details.
 * If the data is present in the intermediate database then we know the issue lies in the second ETL
@@ -122,7 +143,7 @@ One solution to this is check to see if we have we made date checks in the code 
 ```
 
 #### SITUATION 2: One of our end users didn’t receive the file. 
-* Again we should first check in Intermediate DB
+* We should first check in Intermediate DB
 * If present then check logs for second ETL process
 * If not than go to primary source
 * Check Logs for stages in descending order
@@ -134,7 +155,7 @@ One solution to this is check to see if we have we made date checks in the code 
    * If acknowledgement signal is not received pipeline can retry the data set a number of times within a defined thresh-hold.
    
 #### SITUATION 3: User 1 complains that the files they received didn’t have consistent data. 
- * Again we should first check in Intermediate DB to see if first transformation was successful.
+ * We should first check in Intermediate DB to see if first transformation was successful.
  * Transformation jobs can fail hence we need to check specific stage logs to drill down to the issue.
  * Some poor data leaks from Stage 1 ETL can turn into inconsistent data transformation in Stage 2.
  
