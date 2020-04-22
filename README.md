@@ -1,4 +1,6 @@
-# Solution to data pipeline scenarios
+# Solution to data pipeline test scenarios
+ 
+ Note: This document was created in a limited span of time and can be further improved with formal test strategy template. However, it does explain the test strategy in detail for the given scenarios.
  
  ## Test Strategy
 For the given scenario, assuming that following are the main business goals for data cleaning:
@@ -65,9 +67,9 @@ Each stage can have its own isolated automated tests that validates only and onl
 Along with that some really important integration tests are required to 
 validate that data flows correctly from one stage to another.
 
-* Transform - This is the stage where we need check the data type casting.
+* Transform - This is the stage where we need check the data type casting along with other data transformations.
 
-Assuming that we will have some functions defined that casts the relevant fields to the appropriate types:
+Taking an example of datatype casting and assuming that we will have some functions defined that casts the relevant fields to the appropriate types:
 
 Example:
 ```def convert_types(record):
