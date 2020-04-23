@@ -74,7 +74,6 @@ Taking an example of datatype casting and assuming that we will have some functi
 Example:
 ```def convert_types(record):
     #Converts string values to their appropriate type
-    # Only the year part of the datetime string is significant
     record['postcode'] = int(record['postcode'][:4])
 
     record['anotherattribute'] = int(record['anotherattribute']) if 'anotherattribute' in record else None
