@@ -1,6 +1,6 @@
 # Solution to data pipeline test scenarios
  
- Note: This document was created in a limited span of time and can be further improved with formal test strategy template. However, it does explain the test strategy in detail for the given scenarios.
+ Note: This document was created in a limited span of time and can be further improved with formal test strategy document template. However, it does explain the test strategy in detail for the given scenarios.
  
  ## Test Strategy
 For the given scenario, assuming that following are the main business goals for data cleaning:
@@ -13,7 +13,7 @@ hence we can assume that following are the main business goals from accuracy and
 to ensure optimal, consistent runtimes for REA's ETL processes:
 
 * COPY data from multiple, evenly sized files or different file sizes.
-* Use workload management to improve ETL runtime
+* May need workload management to improve ETL runtime
 * Perform table maintenance regularly
 * Perform multiple steps in a single transaction.
 * Loading data in bulk.
@@ -120,6 +120,65 @@ that can enable some sort of network throttling and induce network failures.
 * Fault Tolerance and Redundancy can also help in mitigating some failures in the pipeline
 * A persistent cache, archive and backup can ensure we can rollback to certain data states.
 
+### Testing Categories for overall Data Pipeline
+
+* Metadata testing for
+  * Data Type Checks
+  * Data Length Checks
+  * Same checks across multiple environments if applicable
+  * Naming Standards Checks
+  * Constraint Checks
+
+* Data Completeness tests for
+  * Record Count Validation
+    * Source Query
+    ``` 
+         SELECT count(1) src_count FROM ListingSrc
+    ```   
+    * Target Query
+    ```     
+         SELECT count(1) tgt_count FROM ListingCleaned
+    ```
+  * Column Data Profile Validation or Aggregation Tests
+    * Compare unique values in a column between the source and target.
+    * Compare max, min, avg, max length, min length values for columns depending on the data type.
+    * Compare null values in a column between the source and target.
+    * For important columns, compare data distribution (frequency) in a column between the source and target
+    * Example: Compare the number of listings by postcode between the source and target.
+      * Source Query
+         ```
+        SELECT postcode, count(*) FROM listingSrc GROUP BY postcode
+        ```
+      * Target Query
+       ```
+       SELECT postcode, count(*) FROM listingCleaned GROUP BY postcode
+      ```
+    * Only if required by domain - then Compare Entire Source and Target Data
+        * Use ETL testing tools to compare large amounts of data.
+        * Example: Write a source query that matches the data in the target table after transformation.
+          * Source Query
+          ```
+          SELECT record_id, postcode, house_num, street_num, ||’,’|| street_name, latitude, longitude FROM ListingSrc
+          ```
+          * Target Query
+          ```
+          SELECT integration_id, postcode, full_address, latitude, longitude FROM ListingCleaned
+          ```
+    * Automate Data Completeness Testing using some sort of ETL Validation tools to check:
+        * Automate Data Profile Test Cases: 
+           * that can automatically computes profile of the source and target query results – count, count distinct, nulls, avg, max, min, maxlength and minlength
+        * Query Compare Test Cases: 
+           * which can simplify the comparison of results from source and target queries.
+
+* Data Quality tests
+    * Duplicate Data Checks
+        * Example: Business requirement may say that a combination of postcode, house_number and street_name should be unique.
+          * Sample query to identify duplicates:
+          ```
+          SELECT postcode, house_number, street_name, count(1) FROM Listings 
+          GROUP BY postcode, house_number, street_name HAVING count(1)>1
+          ```
+  
  ## Analysis and Problem Solving
  
  #### SITUATION 1: Our users have received the files for today but it only had data from 2 days ago. 
